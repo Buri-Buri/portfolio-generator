@@ -1,8 +1,8 @@
-# Portfolio Generator
+Portfolio Generator
 
 A full-stack Node.js application that lets users register, log in, and build a multi-section resume/portfolio. Authenticated users can save progress (persisted in SQLite), return later to edit, upload a profile photo, and download the result as a generated PDF.
 
-## Features
+Features
 
 - **Authentication**: Email/password signup/login with bcrypt hashing and session-based auth (SQLite-backed store).
 - **Resume builder**:
@@ -13,7 +13,7 @@ A full-stack Node.js application that lets users register, log in, and build a m
 - **PDF export**: Generates a clean résumé PDF (with photo, skills, academic/work sections, projects, social links).
 - **File uploads**: Multer handles image uploads to `/uploads`.
 
-## Tech Stack
+Tech Stack
 
 | Layer          | Technology                              |
 | -------------- | --------------------------------------- |
@@ -25,7 +25,7 @@ A full-stack Node.js application that lets users register, log in, and build a m
 | PDF generation | pdfkit                                  |
 | Frontend       | Static HTML/CSS/JS served by Express    |
 
-## Project Structure
+Project Structure
 
 ```
 G:\portfolio-generator
@@ -43,7 +43,7 @@ G:\portfolio-generator
 └── README.md          # Project documentation (this file)
 ```
 
-## How It Works
+How It Works
 
 1. **Server & DB initialization**
    - `src/db.js` ensures `data/app.db` exists and defines `users` + `resumes` tables.
@@ -79,7 +79,7 @@ G:\portfolio-generator
      - Sends to `/api/resume`.
    - Includes logout button and “Download PDF” link.
 
-## Getting Started
+Getting Started
 
 ```bash
 npm install          # install dependencies
@@ -87,7 +87,7 @@ npm run dev          # start with nodemon (or `npm start` for plain node)
 # visit http://localhost:3000
 ```
 
-### Environment
+Environment
 
 Optional environment variables:
 
@@ -96,7 +96,7 @@ Optional environment variables:
 | `PORT`           | `3000`                        | HTTP server port                     |
 | `SESSION_SECRET` | `portfolio-generator-secret`  | Session signing secret               |
 
-## API Reference
+API Reference
 
 | Method | Endpoint        | Description                                |
 | ------ | --------------- | ------------------------------------------ |
@@ -108,7 +108,7 @@ Optional environment variables:
 | POST   | `/api/resume`   | Save resume (multipart form + JSON)        |
 | GET    | `/resume/pdf`   | Download PDF (requires login)              |
 
-## Development Notes
+Development Notes
 
 - **Uploads**: Photos are stored under `/uploads` and served statically.
 - **Data safety**: The schema enforces one résumé per user (`user_id UNIQUE`). You can expand to multiple templates by adjusting the schema.
@@ -118,7 +118,5 @@ Optional environment variables:
   - Replace sessions with JWT for stateless deployments.
 - **Testing**: Currently no automated tests; run `npm run dev`, exercise the UI, and monitor server logs.
 
-## License
 
-MIT (or adapt as needed).
 
