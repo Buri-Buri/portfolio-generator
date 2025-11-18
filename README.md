@@ -87,36 +87,3 @@ npm run dev          # start with nodemon (or `npm start` for plain node)
 # visit http://localhost:3000
 ```
 
-Environment
-
-Optional environment variables:
-
-| Variable         | Default                       | Purpose                              |
-| ---------------- | ----------------------------- | ------------------------------------ |
-| `PORT`           | `3000`                        | HTTP server port                     |
-| `SESSION_SECRET` | `portfolio-generator-secret`  | Session signing secret               |
-
-API Reference
-
-| Method | Endpoint        | Description                                |
-| ------ | --------------- | ------------------------------------------ |
-| POST   | `/api/register` | `{ name, email, password }`                |
-| POST   | `/api/login`    | `{ email, password }`                      |
-| GET    | `/api/session`  | Returns session status/user                |
-| POST   | `/api/logout`   | Ends current session                       |
-| GET    | `/api/resume`   | Fetch saved resume for logged-in user      |
-| POST   | `/api/resume`   | Save resume (multipart form + JSON)        |
-| GET    | `/resume/pdf`   | Download PDF (requires login)              |
-
-Development Notes
-
-- **Uploads**: Photos are stored under `/uploads` and served statically.
-- **Data safety**: The schema enforces one résumé per user (`user_id UNIQUE`). You can expand to multiple templates by adjusting the schema.
-- **Extensibility ideas**:
-  - Add client-side validation/preview for PDFs.
-  - Support multiple template styles for PDF output.
-  - Replace sessions with JWT for stateless deployments.
-- **Testing**: Currently no automated tests; run `npm run dev`, exercise the UI, and monitor server logs.
-
-
-
