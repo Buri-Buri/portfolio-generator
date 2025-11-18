@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account | Portfolio Generator</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <main class="auth-layout">
+      <section class="card auth-card">
+        <h1>Create an account</h1>
+        <p class="alert hidden" id="statusBox"></p>
+        <form id="registerForm" class="form-grid">
+          <label>
+            Full name
+            <input type="text" name="name" required />
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" required minlength="6" />
+          </label>
+          <button class="btn filled" type="submit">Create account</button>
+        </form>
+        <p class="form-footnote">
+          Already have an account?
+          <a href="/login">Log in</a>
+        </p>
+      </section>
+    </main>
+    <script>
+      const form = document.getElementById('registerForm');
+      const statusBox = document.getElementById('statusBox');
+
+      function showStatus(message, type = 'error') {
+        statusBox.textContent = message;
+        statusBox.className = `alert ${type}`;
+        statusBox.classList.remove('hidden');
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        showStatus('Creating your account...', 'success');
+        try {
+          const formData = new FormData(form);
+          const payload = Object.fromEntries(formData.entries());
+          const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showStatus(data.error || 'Unable to register', 'error');
+            return;
+          }
+          showStatus('Account created! Redirecting to login...', 'success');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 800);
+        } catch (error) {
+          showStatus('Unexpected error. Please try again.', 'error');
+        }
+      });
+    </script>
+  </body>
+</html>
+

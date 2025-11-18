@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Generator</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-content">
+        <h1>Portfolio Generator</h1>
+        <nav class="inline-nav">
+          <a href="/login" class="btn ghost" id="loginLink">Login</a>
+          <a href="/register" class="btn filled" id="registerLink">Register</a>
+          <button class="btn ghost hidden" id="logoutBtn" type="button">Logout</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Create polished resumes faster</p>
+          <h2>Generate a personalized portfolio in minutes</h2>
+          <p>
+            Keep your information safe, save your progress, and export a clean PDF whenever you
+            need it. Your next opportunity is only a few clicks away.
+          </p>
+          <div class="cta-row">
+            <a class="btn filled" href="/login" id="primaryCta">Log in to start</a>
+            <a class="btn ghost" href="/register">Create free account</a>
+          </div>
+        </div>
+        <div class="card highlight">
+          <h3>What you get</h3>
+          <ul>
+            <li>Secure account with email + password</li>
+            <li>Save progress and return anytime</li>
+            <li>Guided sections for every resume block</li>
+            <li>Instant PDF export</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const logoutBtn = document.getElementById('logoutBtn');
+      const loginLink = document.getElementById('loginLink');
+      const registerLink = document.getElementById('registerLink');
+      const primaryCta = document.getElementById('primaryCta');
+
+      async function refreshSession() {
+        const res = await fetch('/api/session');
+        const data = await res.json();
+        if (data.authenticated) {
+          logoutBtn.classList.remove('hidden');
+          loginLink.classList.add('hidden');
+          registerLink.classList.add('hidden');
+          primaryCta.textContent = 'Continue building';
+          primaryCta.href = '/resume';
+        } else {
+          logoutBtn.classList.add('hidden');
+          loginLink.classList.remove('hidden');
+          registerLink.classList.remove('hidden');
+          primaryCta.textContent = 'Log in to start';
+          primaryCta.href = '/login';
+        }
+      }
+
+      logoutBtn?.addEventListener('click', async () => {
+        await fetch('/api/logout', { method: 'POST' });
+        await refreshSession();
+      });
+
+      refreshSession();
+    </script>
+  </body>
+</html>
+

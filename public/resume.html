@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Builder | Portfolio Generator</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-content">
+        <h1>Resume Builder</h1>
+        <nav class="inline-nav">
+          <span class="user-pill" id="userBadge">Checking session...</span>
+          <button class="btn ghost" id="logoutBtn" type="button">Logout</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container resume-container">
+      <p class="alert hidden" id="formStatus"></p>
+
+      <form id="resumeForm" enctype="multipart/form-data" class="card resume-form">
+        <section>
+          <h2>Personal Details</h2>
+          <div class="form-grid">
+            <label>
+              Full name
+              <input type="text" name="full_name" id="full_name" required />
+            </label>
+            <label class="full-span">
+              Contact information
+              <textarea name="contact_info" id="contact_info" rows="2" required></textarea>
+            </label>
+            <label class="full-span inline-field">
+              Photo (JPG/PNG, max 2MB)
+              <input type="file" name="photo" accept=".jpg,.jpeg,.png" />
+            </label>
+            <div class="photo-preview hidden" id="photoPreviewWrapper">
+              <p>Current photo:</p>
+              <img id="photoPreview" alt="Current profile photo" />
+            </div>
+            <label class="full-span">
+              Short bio
+              <textarea name="short_bio" id="short_bio" rows="3"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Skills</h2>
+          <div class="form-grid">
+            <label>
+              Soft skills
+              <textarea name="soft_skills" id="soft_skills" rows="3"></textarea>
+            </label>
+            <label>
+              Technical skills
+              <textarea name="technical_skills" id="technical_skills" rows="3"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-header">
+            <h2>Academic Background (optional)</h2>
+            <button type="button" class="btn ghost btn-small" id="addAcademicBtn">Add academic entry</button>
+          </div>
+          <div id="academicList" class="repeatable-list"></div>
+        </section>
+
+        <section>
+          <div class="section-header">
+            <h2>Previous Work / Projects</h2>
+            <button type="button" class="btn ghost btn-small" id="addProjectBtn">Add project</button>
+          </div>
+          <div id="projectsList" class="repeatable-list"></div>
+        </section>
+
+        <section>
+          <div class="section-header">
+            <h2>Social Links</h2>
+            <button type="button" class="btn ghost btn-small" id="addSocialBtn">Add link</button>
+          </div>
+          <div id="socialList" class="repeatable-list"></div>
+        </section>
+
+        <section>
+          <div class="section-header">
+            <h2>Work Experience</h2>
+            <button type="button" class="btn ghost btn-small" id="addExperienceBtn">
+              Add experience
+            </button>
+          </div>
+          <div id="experienceList" class="repeatable-list"></div>
+        </section>
+
+        <div class="form-actions">
+          <button class="btn filled" type="submit" id="saveBtn">Save progress</button>
+          <a class="btn ghost" href="/resume/pdf" target="_blank" rel="noopener">Download PDF</a>
+        </div>
+      </form>
+    </main>
+
+    <script>
+      const form = document.getElementById('resumeForm');
+      const formStatus = document.getElementById('formStatus');
+      const userBadge = document.getElementById('userBadge');
+      const photoPreviewWrapper = document.getElementById('photoPreviewWrapper');
+      const photoPreview = document.getElementById('photoPreview');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const projectsList = document.getElementById('projectsList');
+      const socialList = document.getElementById('socialList');
+      const experienceList = document.getElementById('experienceList');
+      const academicList = document.getElementById('academicList');
+      const addProjectBtn = document.getElementById('addProjectBtn');
+      const addSocialBtn = document.getElementById('addSocialBtn');
+      const addExperienceBtn = document.getElementById('addExperienceBtn');
+      const addAcademicBtn = document.getElementById('addAcademicBtn');
+
+      function showStatus(message, type = 'error') {
+        formStatus.textContent = message;
+        formStatus.className = `alert ${type}`;
+        formStatus.classList.remove('hidden');
+      }
+
+      function hideStatus() {
+        formStatus.classList.add('hidden');
+      }
+
+      async function ensureSession() {
+        const res = await fetch('/api/session');
+        const data = await res.json();
+        if (!data.authenticated) {
+          window.location.href = '/login';
+          return null;
+        }
+        userBadge.textContent = `Logged in as ${data.user.name}`;
+        return data.user;
+      }
+
+      function fillField(id, value = '') {
+        const el = document.getElementById(id);
+        if (el) {
+          el.value = value || '';
+        }
+      }
+
+      function createRepeatableItem({ fields, removeHandler }) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'repeatable-item';
+        const grid = document.createElement('div');
+        grid.className = 'form-grid';
+        fields.forEach(({ label, type = 'text', rows = 3, field, placeholder = '' }) => {
+          const fieldLabel = document.createElement('label');
+          fieldLabel.textContent = label;
+          let input;
+          if (type === 'textarea') {
+            input = document.createElement('textarea');
+            input.rows = rows;
+          } else {
+            input = document.createElement('input');
+            input.type = type;
+          }
+          input.dataset.field = field;
+          input.placeholder = placeholder;
+          fieldLabel.appendChild(input);
+          grid.appendChild(fieldLabel);
+        });
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'remove-entry';
+        removeButton.textContent = 'Remove';
+        removeButton.addEventListener('click', () => removeHandler(wrapper));
+        wrapper.appendChild(grid);
+        wrapper.appendChild(removeButton);
+        return wrapper;
+      }
+
+      function addProject(values = {}) {
+        const item = createRepeatableItem({
+          fields: [
+            { label: 'Project title', field: 'project_title', placeholder: 'Portfolio website' },
+            {
+              label: 'Description',
+              field: 'project_description',
+              type: 'textarea',
+              rows: 2,
+              placeholder: 'What was the goal and impact?',
+            },
+            { label: 'Link', field: 'project_link', placeholder: 'https://example.com' },
+          ],
+          removeHandler: (wrapper) => {
+            wrapper.remove();
+            if (!projectsList.children.length) {
+              addProject();
+            }
+          },
+        });
+        projectsList.appendChild(item);
+        item.querySelector('[data-field="project_title"]').value = values.title || '';
+        item.querySelector('[data-field="project_description"]').value = values.description || '';
+        item.querySelector('[data-field="project_link"]').value = values.link || '';
+      }
+
+      function addSocial(values = {}) {
+        const item = createRepeatableItem({
+          fields: [
+            { label: 'Platform / label', field: 'social_label', placeholder: 'LinkedIn' },
+            { label: 'URL', field: 'social_url', placeholder: 'https://linkedin.com/in/you' },
+          ],
+          removeHandler: (wrapper) => {
+            wrapper.remove();
+            if (!socialList.children.length) {
+              addSocial();
+            }
+          },
+        });
+        socialList.appendChild(item);
+        item.querySelector('[data-field="social_label"]').value = values.label || values.platform || '';
+        item.querySelector('[data-field="social_url"]').value = values.url || '';
+      }
+
+      function addExperience(values = {}) {
+        const item = createRepeatableItem({
+          fields: [
+            { label: 'Company / role', field: 'experience_company', placeholder: 'Acme Corp' },
+            { label: 'Duration', field: 'experience_duration', placeholder: 'Jan 2023 - Present' },
+            {
+              label: 'Responsibilities',
+              field: 'experience_responsibilities',
+              type: 'textarea',
+              rows: 3,
+              placeholder: 'Key achievements and responsibilities',
+            },
+          ],
+          removeHandler: (wrapper) => {
+            wrapper.remove();
+            if (!experienceList.children.length) {
+              addExperience();
+            }
+          },
+        });
+        experienceList.appendChild(item);
+        item.querySelector('[data-field="experience_company"]').value = values.company || '';
+        item.querySelector('[data-field="experience_duration"]').value = values.duration || '';
+        item.querySelector('[data-field="experience_responsibilities"]').value =
+          values.responsibilities || '';
+      }
+
+      function addAcademic(values = {}) {
+        const item = createRepeatableItem({
+          fields: [
+            { label: 'Institute', field: 'academic_institute', placeholder: 'University name' },
+            { label: 'Degree', field: 'academic_degree', placeholder: 'BSc in Computer Science' },
+            { label: 'Year', field: 'academic_year', placeholder: '2024' },
+            { label: 'Grade', field: 'academic_grade', placeholder: 'GPA 3.8 / First Class' },
+          ],
+          removeHandler: (wrapper) => {
+            wrapper.remove();
+            if (!academicList.children.length) {
+              addAcademic();
+            }
+          },
+        });
+        academicList.appendChild(item);
+        item.querySelector('[data-field="academic_institute"]').value = values.institute || '';
+        item.querySelector('[data-field="academic_degree"]').value = values.degree || '';
+        item.querySelector('[data-field="academic_year"]').value = values.year || '';
+        item.querySelector('[data-field="academic_grade"]').value = values.grade || '';
+      }
+
+      function collectListValues(list, mapping) {
+        return Array.from(list.querySelectorAll('.repeatable-item')).map((item) => {
+          const entry = {};
+          Object.entries(mapping).forEach(([key, selector]) => {
+            const field = item.querySelector(`[data-field="${selector}"]`);
+            entry[key] = field ? field.value.trim() : '';
+          });
+          return entry;
+        });
+      }
+
+      function collectProjects() {
+        return collectListValues(projectsList, {
+          title: 'project_title',
+          description: 'project_description',
+          link: 'project_link',
+        }).filter((project) => project.title || project.description || project.link);
+      }
+
+      function collectSocialLinks() {
+        return collectListValues(socialList, {
+          label: 'social_label',
+          url: 'social_url',
+        }).filter((link) => link.label || link.url);
+      }
+
+      function collectExperiences() {
+        return collectListValues(experienceList, {
+          company: 'experience_company',
+          duration: 'experience_duration',
+          responsibilities: 'experience_responsibilities',
+        }).filter((exp) => exp.company || exp.duration || exp.responsibilities);
+      }
+
+      function collectAcademicEntries() {
+        return collectListValues(academicList, {
+          institute: 'academic_institute',
+          degree: 'academic_degree',
+          year: 'academic_year',
+          grade: 'academic_grade',
+        }).filter((entry) => entry.institute || entry.degree || entry.year || entry.grade);
+      }
+
+      function populateRepeatable(list, addFn, data = []) {
+        list.innerHTML = '';
+        if (!data.length) {
+          addFn();
+          return;
+        }
+        data.forEach((entry) => addFn(entry));
+      }
+
+      async function loadResume() {
+        try {
+          const res = await fetch('/api/resume');
+          if (res.status === 401) {
+            window.location.href = '/login';
+            return;
+          }
+          const data = await res.json();
+          if (!data.resume) {
+            hideStatus();
+            populateRepeatable(academicList, addAcademic, []);
+            populateRepeatable(projectsList, addProject, []);
+            populateRepeatable(socialList, addSocial, []);
+            populateRepeatable(experienceList, addExperience, []);
+            return;
+          }
+          const resume = data.resume;
+          fillField('full_name', resume.full_name);
+          fillField('contact_info', resume.contact_info);
+          fillField('short_bio', resume.short_bio);
+          fillField('soft_skills', resume.soft_skills);
+          fillField('technical_skills', resume.technical_skills);
+          const academicData =
+            resume.academic_entries && resume.academic_entries.length
+              ? resume.academic_entries
+              : [
+                  {
+                    institute: resume.academic_institute,
+                    degree: resume.academic_degree,
+                    year: resume.academic_year,
+                    grade: resume.academic_grade,
+                  },
+                ].filter((entry) => entry.institute || entry.degree || entry.year || entry.grade);
+          populateRepeatable(academicList, addAcademic, academicData);
+          populateRepeatable(projectsList, addProject, resume.previous_projects || []);
+          populateRepeatable(socialList, addSocial, resume.social_links || []);
+          const experienceData =
+            (resume.job_experiences && resume.job_experiences.length
+              ? resume.job_experiences
+              : [
+                  {
+                    company: resume.company_name,
+                    duration: resume.job_duration,
+                    responsibilities: resume.job_responsibilities,
+                  },
+                ].filter((item) => item.company || item.duration || item.responsibilities)) || [];
+          populateRepeatable(experienceList, addExperience, experienceData);
+          if (resume.photo_path) {
+            photoPreview.src = resume.photo_path;
+            photoPreviewWrapper.classList.remove('hidden');
+          } else {
+            photoPreviewWrapper.classList.add('hidden');
+          }
+          showStatus('Loaded your last saved progress.', 'success');
+        } catch (error) {
+          showStatus('Unable to load resume. Please refresh.', 'error');
+        }
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const experiences = collectExperiences();
+        if (!experiences.length) {
+          showStatus('Please add at least one work experience entry.', 'error');
+          return;
+        }
+        const incompleteExperience = experiences.some(
+          (exp) => !(exp.company && exp.duration && exp.responsibilities)
+        );
+        if (incompleteExperience) {
+          showStatus('Fill in company, duration, and responsibilities for each experience.', 'error');
+          return;
+        }
+        showStatus('Saving your resume...', 'success');
+        try {
+          const formData = new FormData(form);
+          formData.delete('academic_entries');
+          formData.delete('previous_projects');
+          formData.delete('social_links');
+          formData.delete('job_experiences');
+          formData.append('academic_entries', JSON.stringify(collectAcademicEntries()));
+          formData.append('previous_projects', JSON.stringify(collectProjects()));
+          formData.append('social_links', JSON.stringify(collectSocialLinks()));
+          formData.append('job_experiences', JSON.stringify(experiences));
+
+          const res = await fetch('/api/resume', {
+            method: 'POST',
+            body: formData,
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showStatus(data.error || 'Unable to save resume', 'error');
+            return;
+          }
+          if (data.resume?.photo_path) {
+            photoPreview.src = data.resume.photo_path;
+            photoPreviewWrapper.classList.remove('hidden');
+          }
+          showStatus('Resume saved successfully!', 'success');
+        } catch (error) {
+          showStatus('Unexpected error. Please try again.', 'error');
+        }
+      });
+
+      addProjectBtn.addEventListener('click', () => addProject());
+      addSocialBtn.addEventListener('click', () => addSocial());
+      addExperienceBtn.addEventListener('click', () => addExperience());
+      addAcademicBtn.addEventListener('click', () => addAcademic());
+
+      logoutBtn.addEventListener('click', async () => {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/login';
+      });
+
+      (async function init() {
+        const user = await ensureSession();
+        if (!user) return;
+        addAcademic();
+        addProject();
+        addSocial();
+        addExperience();
+        await loadResume();
+      })();
+    </script>
+  </body>
+</html>
+

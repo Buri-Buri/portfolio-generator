@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Log In | Portfolio Generator</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <main class="auth-layout">
+      <section class="card auth-card">
+        <h1>Welcome back</h1>
+        <p class="alert hidden" id="statusBox"></p>
+        <form id="loginForm" class="form-grid">
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" required />
+          </label>
+          <button class="btn filled" type="submit">Log in</button>
+        </form>
+        <p class="form-footnote">
+          Need an account?
+          <a href="/register">Create one</a>
+        </p>
+      </section>
+    </main>
+    <script>
+      const form = document.getElementById('loginForm');
+      const statusBox = document.getElementById('statusBox');
+
+      function showStatus(message, type = 'error') {
+        statusBox.textContent = message;
+        statusBox.className = `alert ${type}`;
+        statusBox.classList.remove('hidden');
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        showStatus('Signing you in...', 'success');
+        try {
+          const formData = new FormData(form);
+          const payload = Object.fromEntries(formData.entries());
+          const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showStatus(data.error || 'Unable to log in', 'error');
+            return;
+          }
+          showStatus('Login successful. Redirecting...', 'success');
+          setTimeout(() => {
+            window.location.href = '/resume';
+          }, 600);
+        } catch (error) {
+          showStatus('Unexpected error. Please try again.', 'error');
+        }
+      });
+    </script>
+  </body>
+</html>
+
