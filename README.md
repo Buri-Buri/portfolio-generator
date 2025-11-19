@@ -82,8 +82,8 @@ How It Works
 Getting Started
 
 ```bash
-npm install          # install dependencies
-npm run dev          # start with nodemon (or `npm start` for plain node)
+npm install         
+npm run dev    # (or `npm start` for plain node)
 # visit http://localhost:3000
 ```
 
